@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ordenar el diálogo - En el banco</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
+        body {
+            background: #eef2f7;
+            padding: 30px 20px;
+            display: flex;
+            justify-content: center;
+            margin: 0;
+        }
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: white;
+            padding: 30px 35px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+        h1 {
+            font-size: 28px;
+            color: #0b2b44;
+            margin-top: 0;
+            border-bottom: 4px solid #2b7be4;
+            padding-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        h1 small {
+            font-size: 16px;
+            font-weight: 400;
+            color: #4a6a85;
+            margin-left: auto;
+        }
+        .instructions {
+            background: #f0f7ff;
+            padding: 12px 18px;
+            border-radius: 12px;
+            color: #1e4a76;
+            margin-bottom: 25px;
+            border-left: 6px solid #2b7be4;
+        }
+        #dialogList {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0 25px;
+            min-height: 400px;
+        }
+        .dialog-item {
+            background: #fbfdff;
+            border: 2px solid #dce3ed;
+            border-radius: 14px;
+            padding: 14px 20px;
+            font-size: 16px;
+            line-height: 1.5;
+            cursor: grab;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            user-select: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .dialog-item:hover {
+            background: #f5f9ff;
+            border-color: #b0c7e0;
+        }
+        .dialog-item:active {
+            cursor: grabbing;
+        }
+        .dialog-item .index {
+            display: inline-block;
+            font-weight: 700;
+            color: #6f8aa8;
+            background: #e9eef4;
+            border-radius: 30px;
+            padding: 2px 12px;
+            font-size: 14px;
+            min-width: 32px;
+            text-align: center;
+        }
+        .dialog-item.dragging {
+            opacity: 0.4;
+            border-style: dashed;
+        }
+        .dialog-item.drag-over {
+            border-color: #2b7be4;
+            background: #e6f0ff;
+            transform: scale(1.01);
+        }
+        /* estados de comprobación */
+        .dialog-item.correct {
+            border-color: #2b8c4a;
+            background: #e6f5ed;
+        }
+        .dialog-item.correct .index {
+            background: #2b8c4a;
+            color: white;
+        }
+        .dialog-item.wrong {
+            border-color: #c73b3b;
+            background: #fde8e8;
+        }
+        .dialog-item.wrong .index {
+            background: #c73b3b;
+            color: white;
+        }
+        .dialog-item.hint {
+            border-color: #e6b800;
+            background: #fff9e0;
+            box-shadow: 0 0 0 3px #ffe066;
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 10px 0 15px;
+        }
+        .btn {
+            background: white;
+            border: 2px solid #cfddee;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e3a5f;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            flex: 1 0 auto;
+            justify-content: center;
+        }
+        .btn:hover {
+            background: #f5f9ff;
+            border-color: #2b7be4;
+            transform: translateY(-2px);
+        }
+        .btn-primary {
+            background: #2b7be4;
+            border-color: #2b7be4;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #1f64c4;
+            border-color: #1f64c4;
+        }
+        .btn-success {
+            background: #2b8c4a;
+            border-color: #2b8c4a;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #1f723b;
+            border-color: #1f723b;
+        }
+        .btn-warning {
+            background: #e6b800;
+            border-color: #e6b800;
+            color: #1e3a5f;
+        }
+        .btn-warning:hover {
+            background: #d4a800;
+            border-color: #d4a800;
+        }
+        .btn-danger {
+            background: #c73b3b;
+            border-color: #c73b3b;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #a82e2e;
+            border-color: #a82e2e;
+        }
+        .result-message {
+            margin: 20px 0 0;
+            padding: 14px 20px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 18px;
+            background: #f1f5f9;
+            color: #1e3a5f;
+            text-align: center;
+        }
+        .result-message.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .result-message.fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .footer {
+            margin-top: 25px;
+            color: #7a94b5;
+            font-size: 14px;
+            text-align: center;
+            border-top: 1px solid #e2eaf2;
+            padding-top: 20px;
+        }
+        @media (max-width: 600px) {
+            .container { padding: 20px; }
+            .dialog-item { font-size: 14px; padding: 12px 16px; }
+            .btn { padding: 10px 16px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>
+        🗂️ Ordenar el diálogo
+        <small>B1/B2 · En el banco</small>
+    </h1>
+    <div class="instructions">
+        Arrastra las frases para colocarlas en el orden correcto del diálogo.
+        Puedes usar los botones de ayuda si lo necesitas.
+    </div>
+
+    <div id="dialogList"></div>
+
+    <div class="btn-group">
+        <button class="btn btn-primary" id="checkBtn">✅ Comprobar la solución</button>
+        <button class="btn btn-success" id="showBtn">👁️ Mostrar la solución</button>
+        <button class="btn btn-warning" id="helpBtn">💡 Ayuda</button>
+        <button class="btn btn-danger" id="resetBtn">🔄 Reiniciar el formulario</button>
+    </div>
+
+    <div id="resultMessage" class="result-message">—</div>
+
+    <div class="footer">
+        Haz clic en <strong>Ayuda</strong> para resaltar la primera frase que está fuera de lugar.
+    </div>
+</div>
+
+<script>
+    (function() {
+        // --- Diálogo correcto (orden) ---
+        const correctDialog = [
+            "Cliente: Buenos días. Necesito dinero en efectivo.",
+            "Cajero: ¿Tiene una tarjeta de crédito?",
+            "Cliente: No, sólo cheques de viajero. ¿Los aceptan?",
+            "Cajero: Por supuesto. ¿Me da su pasaporte?",
+            "Cliente: Sí, aquí tiene. ¿Cuál es el cambio del día?",
+            "Cajero: 8.50 ¿Cuánto quiere cambiar?",
+            "Cliente: 200 dólares.",
+            "Cajero: Firme los cheques, por favor.",
+            "Cliente: ¿Me deja su bolígrafo un momento? Perdone, ¿cuánto voy a recibir?",
+            "Cajero: A ver, 200 x 8.50 son 1700.",
+            "Cliente: Muchas gracias, adiós.",
+            "Cajero: Hasta luego."
+        ];
+
+        let currentItems = []; // массив строк в текущем порядке
+        let dragSrcIndex = null;
+
+        const listEl = document.getElementById('dialogList');
+        const resultMsg = document.getElementById('resultMessage');
+
+        // --- Вспомогательные функции ---
+
+        // Перемешивает массив (алгоритм Фишера-Йетса)
+        function shuffleArray(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        // Сброс стилей у всех элементов
+        function clearItemStyles() {
+            document.querySelectorAll('.dialog-item').forEach(el => {
+                el.classList.remove('correct', 'wrong', 'hint', 'drag-over', 'dragging');
+            });
+        }
+
+        // Обновить отображение списка
+        function renderList(items) {
+            listEl.innerHTML = '';
+            items.forEach((text, idx) => {
+                const div = document.createElement('div');
+                div.className = 'dialog-item';
+                div.draggable = true;
+                div.dataset.index = idx;
+                div.innerHTML = `<span class="index">${idx + 1}</span> ${text}`;
+
+                // Drag events
+                div.addEventListener('dragstart', handleDragStart);
+                div.addEventListener('dragend', handleDragEnd);
+                div.addEventListener('dragover', handleDragOver);
+                div.addEventListener('dragenter', handleDragEnter);
+                div.addEventListener('dragleave', handleDragLeave);
+                div.addEventListener('drop', handleDrop);
+
+                listEl.appendChild(div);
+            });
+            // сброс сообщения и стилей
+            resultMsg.textContent = '—';
+            resultMsg.className = 'result-message';
+            clearItemStyles();
+            // также сброс переменной drag
+            dragSrcIndex = null;
+        }
+
+        // --- Обработчики перетаскивания ---
+        function handleDragStart(e) {
+            const el = e.target.closest('.dialog-item');
+            if (!el) return;
+            dragSrcIndex = parseInt(el.dataset.index, 10);
+            el.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', dragSrcIndex);
+        }
+
+        function handleDragEnd(e) {
+            const el = e.target.closest('.dialog-item');
+            if (el) el.classList.remove('dragging');
+            document.querySelectorAll('.dialog-item').forEach(item => item.classList.remove('drag-over'));
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const target = e.target.closest('.dialog-item');
+            if (target) target.classList.add('drag-over');
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            const target = e.target.closest('.dialog-item');
+            if (target) target.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            const target = e.target.closest('.dialog-item');
+            if (target) target.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const target = e.target.closest('.dialog-item');
+            if (!target) return;
+            target.classList.remove('drag-over');
+
+            const fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+            const toIndex = parseInt(target.dataset.index, 10);
+            if (isNaN(fromIndex) || isNaN(toIndex) || fromIndex === toIndex) return;
+
+            // Перемещаем элемент в массиве
+            const item = currentItems.splice(fromIndex, 1)[0];
+            currentItems.splice(toIndex, 0, item);
+
+            // Очищаем стили и перерисовываем
+            clearItemStyles();
+            renderList(currentItems);
+            // сбрасываем сообщение
+            resultMsg.textContent = '—';
+            resultMsg.className = 'result-message';
+        }
+
+        // --- Функции кнопок ---
+
+        // Проверка
+        function checkSolution() {
+            clearItemStyles();
+            let allCorrect = true;
+            const items = document.querySelectorAll('.dialog-item');
+            items.forEach((el, idx) => {
+                const text = el.textContent.replace(/^\d+\s+/, '').trim(); // убираем номер индекса
+                if (text === correctDialog[idx]) {
+                    el.classList.add('correct');
+                } else {
+                    el.classList.add('wrong');
+                    allCorrect = false;
+                }
+            });
+            if (allCorrect) {
+                resultMsg.textContent = '✅ ¡Perfecto! Has ordenado el diálogo correctamente.';
+                resultMsg.className = 'result-message success';
+            } else {
+                resultMsg.textContent = '❌ Algunas frases están fuera de lugar. Sigue intentándolo.';
+                resultMsg.className = 'result-message fail';
+            }
+        }
+
+        // Показать решение
+        function showSolution() {
+            currentItems = [...correctDialog];
+            renderList(currentItems);
+            // после рендера все элементы будут без стилей, но мы можем подсветить как правильные
+            document.querySelectorAll('.dialog-item').forEach(el => el.classList.add('correct'));
+            resultMsg.textContent = '👀 Esta es la solución correcta.';
+            resultMsg.className = 'result-message success';
+        }
+
+        // Подсказка: выделить первую неправильную позицию
+        function giveHint() {
+            clearItemStyles();
+            const items = document.querySelectorAll('.dialog-item');
+            let firstWrongIndex = -1;
+            items.forEach((el, idx) => {
+                const text = el.textContent.replace(/^\d+\s+/, '').trim();
+                if (text !== correctDialog[idx] && firstWrongIndex === -1) {
+                    firstWrongIndex = idx;
+                }
+            });
+            if (firstWrongIndex === -1) {
+                resultMsg.textContent = '🎉 ¡Ya está todo en orden! No necesitas ayuda.';
+                resultMsg.className = 'result-message success';
+                return;
+            }
+            // Подсвечиваем только эту позицию
+            items.forEach((el, idx) => {
+                if (idx === firstWrongIndex) {
+                    el.classList.add('hint');
+                } else {
+                    // убираем другие стили
+                    el.classList.remove('wrong', 'correct');
+                }
+            });
+            resultMsg.textContent = `💡 La frase en la posición ${firstWrongIndex + 1} no es la correcta. Intenta moverla.`;
+            resultMsg.className = 'result-message';
+        }
+
+        // Перемешать
+        function resetForm() {
+            // Перемешиваем правильный порядок
+            currentItems = shuffleArray(correctDialog);
+            renderList(currentItems);
+            resultMsg.textContent = '🔄 El diálogo se ha mezclado de nuevo. ¡Ordénalo!';
+            resultMsg.className = 'result-message';
+        }
+
+        // --- Инициализация ---
+
+        // При загрузке перемешиваем и рендерим
+        currentItems = shuffleArray(correctDialog);
+        renderList(currentItems);
+
+        // Привязываем кнопки
+        document.getElementById('checkBtn').addEventListener('click', checkSolution);
+        document.getElementById('showBtn').addEventListener('click', showSolution);
+        document.getElementById('helpBtn').addEventListener('click', giveHint);
+        document.getElementById('resetBtn').addEventListener('click', resetForm);
+
+        // Дополнительно: при перетаскивании сбрасываем сообщение, если оно было
+        // это уже делается в renderList и в drop
+
+    })();
+</script>
+</body>
+</html>
