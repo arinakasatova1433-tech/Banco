@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест: банковская лексика</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background: #f4f7fc;
+            padding: 30px 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            max-width: 950px;
+            width: 100%;
+            background: white;
+            padding: 30px 35px;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 26px;
+            color: #1a3b5d;
+            border-bottom: 3px solid #4a90d9;
+            padding-bottom: 12px;
+            margin-top: 0;
+        }
+        .word-list {
+            margin: 20px 0 25px;
+            padding: 16px 20px;
+            background: #f8fafc;
+            border-radius: 16px;
+            border: 1px dashed #94a3b8;
+        }
+        .word-list h3 {
+            margin: 0 0 10px 0;
+            color: #1e293b;
+            font-size: 17px;
+        }
+        .word-list .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .word-list .tags span {
+            background: white;
+            padding: 5px 14px;
+            border-radius: 30px;
+            border: 1px solid #cbd5e1;
+            font-size: 14px;
+            font-weight: 500;
+            color: #0f172a;
+        }
+        .sentence {
+            background: #f9faff;
+            padding: 12px 18px;
+            margin-bottom: 12px;
+            border-radius: 12px;
+            border-left: 5px solid #4a90d9;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px 10px;
+            font-size: 17px;
+            line-height: 1.6;
+        }
+        .sentence select {
+            padding: 6px 12px;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            background: white;
+            font-size: 16px;
+            font-weight: 500;
+            color: #1e293b;
+            cursor: pointer;
+            transition: 0.2s;
+            min-width: 160px;
+        }
+        .sentence select:focus {
+            border-color: #4a90d9;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(74,144,217,0.2);
+        }
+        .sentence .number {
+            font-weight: 700;
+            color: #4a90d9;
+            margin-right: 4px;
+            font-size: 16px;
+        }
+        .sentence .badge {
+            display: inline-block;
+            margin-left: 6px;
+            font-size: 18px;
+            font-weight: 600;
+            min-width: 30px;
+            text-align: center;
+        }
+        .sentence .badge.ok {
+            color: #15803d;
+        }
+        .sentence .badge.fail {
+            color: #b91c1c;
+        }
+        .sentence .badge.empty {
+            color: #94a3b8;
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 20px 0 10px;
+        }
+        .btn {
+            background: white;
+            border: 2px solid #cfddee;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e3a5f;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .btn:hover {
+            background: #f5f9ff;
+            border-color: #2b7be4;
+            transform: translateY(-2px);
+        }
+        .btn-primary {
+            background: #2b7be4;
+            border-color: #2b7be4;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #1f64c4;
+            border-color: #1f64c4;
+        }
+        .btn-success {
+            background: #2b8c4a;
+            border-color: #2b8c4a;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #1f723b;
+            border-color: #1f723b;
+        }
+        .btn-danger {
+            background: #c73b3b;
+            border-color: #c73b3b;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #a82e2e;
+            border-color: #a82e2e;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            padding: 12px 20px;
+            border-radius: 14px;
+            background: #f1f5f9;
+            text-align: center;
+            color: #1e293b;
+        }
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .result.fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .footer {
+            margin-top: 25px;
+            color: #64748b;
+            font-size: 14px;
+            text-align: center;
+            border-top: 1px solid #e2eaf2;
+            padding-top: 18px;
+        }
+        @media (max-width: 600px) {
+            .container { padding: 20px; }
+            .sentence { font-size: 15px; padding: 12px; }
+            .sentence select { min-width: 130px; font-size: 14px; }
+            .btn { padding: 10px 18px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🏦 Заполните пропуски</h1>
+    <p style="color: #475569; margin-bottom: 5px;">Выберите правильное слово из выпадающего списка для каждого предложения.</p>
+
+    <!-- Банк слов сверху -->
+    <div class="word-list">
+        <h3>📝 Слова для выбора:</h3>
+        <div class="tags" id="wordTags"></div>
+    </div>
+
+    <!-- Место для предложений -->
+    <div id="sentencesContainer"></div>
+
+    <!-- Кнопки -->
+    <div class="btn-group">
+        <button class="btn btn-success" id="showAllBtn">📋 Показать все ответы</button>
+        <button class="btn btn-danger" id="resetBtn">🔄 Сбросить</button>
+    </div>
+
+    <!-- Итоговый результат -->
+    <div id="resultArea" class="result">—</div>
+
+    <div class="footer">
+        Каждый выбор проверяется автоматически. Зелёная галочка — верно, красный крестик — ошибка.
+    </div>
+</div>
+
+<script>
+    (function() {
+        // --- Данные ---
+        const allWords = [
+            'cajero automático',
+            'vivienda',
+            'usuario',
+            'pedir un crédito',
+            'domiciliar un pago',
+            'contraseña',
+            'monedero',
+            'ahorrar dinero',
+            'ahorro',
+            'crédito',
+            'ventanilla',
+            'nómina',
+            'consultar el saldo',
+            'débito',
+            'abrir una cuenta'
+        ];
+
+        // Правильные ответы (в порядке предложений 1–15)
+        const correct = [
+            'cajero automático',
+            'vivienda',
+            'usuario',
+            'pedir un crédito',
+            'domiciliar un pago',
+            'contraseña',
+            'monedero',
+            'ahorrar dinero',
+            'crédito',
+            'ahorro',
+            'nómina',
+            'ventanilla',
+            'abrir una cuenta',
+            'consultar el saldo',
+            'débito'
+        ];
+
+        // Тексты предложений (%% — место для select)
+        const sentenceTemplates = [
+            '1. Necesito sacar dinero, así que voy al %%',
+            '2. La cuenta %% es para ahorrar para comprar una casa.',
+            '3. Cada persona que utiliza un servicio tiene su propia identificación de %%.',
+            '4. Si necesitas dinero a largo plazo, puedes %%.',
+            '5. Para pagar automáticamente las facturas, puedes %%.',
+            '6. Antes de comprar en línea, es importante recordar tu %%.',
+            '7. La tarjeta %% es práctica para controlar los gastos diarios.',
+            '8. Es importante %% para alcanzar metas financieras.',
+            '9. La tarjeta de %% permite hacer compras incluso si no tienes dinero en la cuenta.',
+            '10. La cuenta de %% es buena para guardar dinero a largo plazo.',
+            '11. Mi sueldo se deposita en la cuenta %%.',
+            '12. Si tienes preguntas, puedes ir a la %% del banco para obtener ayuda.',
+            '13. Quiero %% en otro banco para diversificar mis finanzas.',
+            '14. Antes de hacer compras grandes, es bueno %%.',
+            '15. Cuando pago directamente desde mi cuenta, uso la tarjeta de %%.'
+        ];
+
+        // --- DOM элементы ---
+        const container = document.getElementById('sentencesContainer');
+        const wordTagsContainer = document.getElementById('wordTags');
+        const resultDiv = document.getElementById('resultArea');
+
+        // Массив для хранения всех select
+        let selects = [];
+
+        // --- Функция проверки одного предложения ---
+        function checkSingle(index) {
+            const select = selects[index];
+            const badge = document.getElementById(`badge-${index}`);
+            const selected = select.value;
+            const isCorrect = (selected === correct[index]);
+
+            if (selected === '') {
+                badge.textContent = '—';
+                badge.className = 'badge empty';
+                return false; // не выбрано
+            } else if (isCorrect) {
+                badge.textContent = '✅';
+                badge.className = 'badge ok';
+                return true;
+            } else {
+                badge.textContent = '❌';
+                badge.className = 'badge fail';
+                return false;
+            }
+        }
+
+        // --- Пересчёт общего результата ---
+        function updateTotal() {
+            let correctCount = 0;
+            let total = correct.length;
+            selects.forEach((select, idx) => {
+                if (select.value !== '' && select.value === correct[idx]) {
+                    correctCount++;
+                }
+            });
+            const allSelected = selects.every(s => s.value !== '');
+            if (correctCount === total && allSelected) {
+                resultDiv.textContent = `✅ ¡Perfecto! Todas las respuestas son correctas (${correctCount}/${total}).`;
+                resultDiv.className = 'result success';
+            } else {
+                resultDiv.textContent = `📊 Правильных ответов: ${correctCount} из ${total}`;
+                resultDiv.className = 'result fail';
+                if (correctCount === total) {
+                    // но если все правильные, но не все выбраны? тогда fail
+                }
+            }
+            // дополнительно, если все выбраны, но не все правильные
+        }
+
+        // --- Создание интерфейса ---
+        function buildTest() {
+            container.innerHTML = '';
+            selects = [];
+
+            sentenceTemplates.forEach((template, idx) => {
+                const div = document.createElement('div');
+                div.className = 'sentence';
+
+                const parts = template.split('%%');
+
+                // Текст до
+                const spanBefore = document.createElement('span');
+                spanBefore.textContent = parts[0];
+                div.appendChild(spanBefore);
+
+                // Select
+                const select = document.createElement('select');
+                select.dataset.index = idx;
+                // Пустой вариант
+                const emptyOpt = document.createElement('option');
+                emptyOpt.value = '';
+                emptyOpt.textContent = '⬇️ выберите';
+                select.appendChild(emptyOpt);
+
+                allWords.forEach(w => {
+                    const opt = document.createElement('option');
+                    opt.value = w;
+                    opt.textContent = w;
+                    select.appendChild(opt);
+                });
+
+                // Событие изменения
+                select.addEventListener('change', function() {
+                    checkSingle(idx);
+                    updateTotal();
+                });
+
+                div.appendChild(select);
+                selects.push(select);
+
+                // Текст после
+                if (parts.length > 1) {
+                    const spanAfter = document.createElement('span');
+                    spanAfter.textContent = parts[1] || '';
+                    div.appendChild(spanAfter);
+                }
+
+                // Бейдж для результата
+                const badge = document.createElement('span');
+                badge.className = 'badge empty';
+                badge.id = `badge-${idx}`;
+                badge.textContent = '—';
+                div.appendChild(badge);
+
+                container.appendChild(div);
+            });
+        }
+
+        // --- Заполнение банка слов ---
+        function fillWordTags() {
+            wordTagsContainer.innerHTML = '';
+            allWords.forEach(w => {
+                const span = document.createElement('span');
+                span.textContent = w;
+                wordTagsContainer.appendChild(span);
+            });
+        }
+
+        // --- Показать все ответы ---
+        function showAllAnswers() {
+            selects.forEach((select, idx) => {
+                select.value = correct[idx];
+                // триггерим событие change, чтобы обновились бейджи
+                select.dispatchEvent(new Event('change'));
+            });
+            // после этого общий счет обновится автоматически через change
+        }
+
+        // --- Сброс ---
+        function resetAll() {
+            selects.forEach((select, idx) => {
+                select.value = '';
+                const badge = document.getElementById(`badge-${idx}`);
+                badge.textContent = '—';
+                badge.className = 'badge empty';
+            });
+            resultDiv.textContent = '—';
+            resultDiv.className = 'result';
+        }
+
+        // --- Инициализация ---
+        buildTest();
+        fillWordTags();
+        // Добавим обработчики для кнопок
+        document.getElementById('showAllBtn').addEventListener('click', showAllAnswers);
+        document.getElementById('resetBtn').addEventListener('click', resetAll);
+        // Первоначальный результат
+        updateTotal();
+
+    })();
+</script>
+</body>
+</html>
