@@ -1,0 +1,1715 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cajero Automático · Banco Español</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+        --atm-dark: #1e293b;
+        --atm-mid: #334155;
+        --atm-light: #475569;
+        --screen-bg: #0c4a6e;
+        --screen-accent: #38bdf8;
+        --screen-warn: #fbbf24;
+        --screen-ok: #4ade80;
+        --screen-err: #f87171;
+    }
+
+    body {
+        font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        background: linear-gradient(135deg, #e0e7ff 0%, #fef3c7 100%);
+        min-height: 100vh;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        color: #1e293b;
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .page-header h1 {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.5px;
+    }
+
+    .page-header p {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin-top: 0.2rem;
+    }
+
+    /* ========== ATM BODY ========== */
+    .atm {
+        width: 100%;
+        max-width: 720px;
+        background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
+        border-radius: 28px;
+        padding: 1.2rem;
+        box-shadow:
+            0 30px 60px -15px rgba(15, 23, 42, 0.6),
+            0 0 0 2px #0f172a,
+            inset 0 2px 0 rgba(255,255,255,0.08);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .atm::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(56,189,248,0.6), transparent);
+    }
+
+    /* Top brand bar */
+    .atm-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.4rem 0.5rem 1rem;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        margin-bottom: 1rem;
+    }
+
+    .bank-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+    }
+
+    .bank-icon {
+        width: 42px; height: 42px;
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 10px rgba(245, 158, 11, 0.4);
+    }
+
+    .bank-name {
+        color: #f1f5f9;
+        font-weight: 800;
+        font-size: 1.05rem;
+        letter-spacing: 0.3px;
+    }
+
+    .bank-tagline {
+        color: #94a3b8;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .atm-clock {
+        color: #94a3b8;
+        font-family: 'Courier New', monospace;
+        font-weight: 700;
+        font-size: 0.9rem;
+        background: rgba(0,0,0,0.3);
+        padding: 0.3rem 0.7rem;
+        border-radius: 8px;
+    }
+
+    /* Main body: screen + panel */
+    .atm-body {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Screen */
+    .screen-bezel {
+        background: #0f172a;
+        border-radius: 18px;
+        padding: 10px;
+        box-shadow:
+            inset 0 2px 8px rgba(0,0,0,0.6),
+            0 0 0 1px #000;
+        position: relative;
+    }
+
+    .screen-bezel::after {
+        content: '';
+        position: absolute;
+        top: 4px; left: 20%; right: 20%;
+        height: 1px;
+        background: rgba(56,189,248,0.3);
+        border-radius: 1px;
+    }
+
+    .screen {
+        background: radial-gradient(ellipse at top, #0c4a6e 0%, #082f49 100%);
+        border-radius: 12px;
+        min-height: 380px;
+        padding: 1.5rem 1.3rem;
+        color: #e0f2fe;
+        font-size: 0.92rem;
+        position: relative;
+        overflow: hidden;
+        box-shadow: inset 0 0 40px rgba(56,189,248,0.15);
+    }
+
+    .screen::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: repeating-linear-gradient(
+            0deg,
+            transparent 0px,
+            transparent 2px,
+            rgba(0,0,0,0.08) 3px
+        );
+        pointer-events: none;
+    }
+
+    /* Screen content layouts */
+    .scr-center {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        min-height: 330px;
+        gap: 0.7rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .scr-menu {
+        position: relative;
+        z-index: 1;
+    }
+
+    .scr-logo { font-size: 3rem; filter: drop-shadow(0 4px 8px rgba(56,189,248,0.4)); }
+    .scr-icon { font-size: 2.6rem; }
+    .scr-icon.big { font-size: 3.5rem; }
+
+    .scr-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #7dd3fc;
+        letter-spacing: 0.3px;
+        text-shadow: 0 0 20px rgba(56,189,248,0.4);
+    }
+
+    .scr-text {
+        font-size: 0.9rem;
+        color: #bae6fd;
+        line-height: 1.45;
+    }
+
+    .scr-text.small { font-size: 0.78rem; color: #7dd3fc; opacity: 0.8; }
+    .scr-text.mt { margin-top: 0.5rem; }
+
+    .scr-big {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: #fbbf24;
+        font-family: 'Courier New', monospace;
+        text-shadow: 0 0 25px rgba(251,191,36,0.5);
+    }
+
+    .scr-input {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #fbbf24;
+        font-family: 'Courier New', monospace;
+        background: rgba(0,0,0,0.35);
+        padding: 0.5rem 1.5rem;
+        border-radius: 10px;
+        border: 2px solid rgba(56,189,248,0.4);
+        min-width: 140px;
+        text-shadow: 0 0 15px rgba(251,191,36,0.4);
+    }
+
+    .scr-divider {
+        width: 60%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #38bdf8, transparent);
+        margin: 0.5rem 0;
+    }
+
+    /* Buttons on screen */
+    .scr-btn, .scr-actions button, .menu-grid button, .amount-grid button {
+        background: linear-gradient(180deg, #0369a1, #075985);
+        color: #f0f9ff;
+        border: 1px solid #38bdf8;
+        padding: 0.6rem 1rem;
+        border-radius: 10px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        transition: all 0.15s;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+        text-align: center;
+        letter-spacing: 0.2px;
+    }
+
+    .scr-btn:hover, .scr-actions button:hover, .menu-grid button:hover, .amount-grid button:hover {
+        background: linear-gradient(180deg, #0284c7, #0369a1);
+        border-color: #7dd3fc;
+        transform: translateY(-1px);
+    }
+
+    .scr-btn:active, .scr-actions button:active, .menu-grid button:active, .amount-grid button:active {
+        transform: translateY(1px);
+        box-shadow: 0 0 0 rgba(0,0,0,0.3), inset 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .scr-btn.primary {
+        background: linear-gradient(180deg, #f59e0b, #d97706);
+        border-color: #fbbf24;
+        color: #1e293b;
+        font-weight: 700;
+        padding: 0.75rem 1.5rem;
+        font-size: 0.95rem;
+    }
+
+    .scr-btn.primary:hover { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
+
+    button.secondary {
+        background: rgba(30, 41, 59, 0.6);
+        border-color: rgba(148, 163, 184, 0.4);
+        color: #cbd5e1;
+    }
+
+    button.secondary:hover {
+        background: rgba(51, 65, 85, 0.8);
+        border-color: #94a3b8;
+    }
+
+    button.danger {
+        background: linear-gradient(180deg, #b91c1c, #7f1d1d);
+        border-color: #ef4444;
+    }
+
+    button.danger:hover { background: linear-gradient(180deg, #dc2626, #991b1b); }
+
+    button.danger-outline {
+        background: transparent;
+        border: 1px solid #ef4444;
+        color: #fca5a5;
+    }
+
+    .scr-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 0.5rem;
+    }
+
+    .scr-actions.col { flex-direction: column; width: 100%; max-width: 260px; }
+    .scr-actions.col button { width: 100%; }
+
+    /* Menu grid */
+    .menu-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .menu-grid button {
+        padding: 0.9rem 0.5rem;
+        font-size: 0.82rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 56px;
+    }
+
+    /* Amount grid */
+    .amount-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .amount-grid button {
+        padding: 1rem 0.5rem;
+        font-size: 1.05rem;
+        font-weight: 700;
+        font-family: 'Courier New', monospace;
+        min-height: 60px;
+    }
+
+    .amount-grid button.wide { grid-column: span 2; }
+
+    /* PIN dots */
+    .pin-display {
+        display: flex;
+        gap: 0.6rem;
+        margin: 0.8rem 0;
+    }
+
+    .pin-dot {
+        width: 42px; height: 52px;
+        background: rgba(0,0,0,0.4);
+        border: 2px solid #38bdf8;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: #fbbf24;
+        transition: all 0.2s;
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);
+    }
+
+    .pin-dot.filled {
+        background: rgba(56,189,248,0.25);
+        box-shadow: 0 0 15px rgba(56,189,248,0.6), inset 0 2px 6px rgba(0,0,0,0.3);
+        transform: scale(1.05);
+    }
+
+    /* Spinner */
+    .spinner {
+        width: 46px; height: 46px;
+        border: 4px solid rgba(56,189,248,0.2);
+        border-top-color: #38bdf8;
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+        margin: 0.8rem 0;
+        box-shadow: 0 0 20px rgba(56,189,248,0.3);
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .scr-center.error .scr-title { color: #fca5a5; text-shadow: 0 0 20px rgba(248,113,113,0.5); }
+    .scr-center.success .scr-title { color: #86efac; text-shadow: 0 0 20px rgba(74,222,128,0.5); }
+
+    /* ========== SIDE PANEL ========== */
+    .atm-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+        background: linear-gradient(180deg, #475569 0%, #334155 100%);
+        border-radius: 18px;
+        padding: 1rem 0.9rem;
+        box-shadow: inset 0 2px 4px rgba(255,255,255,0.06), inset 0 -3px 8px rgba(0,0,0,0.4);
+        border: 1px solid #0f172a;
+    }
+
+    .slot-label, .keypad-label {
+        font-size: 0.62rem;
+        color: #94a3b8;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        margin-bottom: 0.35rem;
+        text-transform: uppercase;
+    }
+
+    /* Card slot */
+    .card-slot {
+        position: relative;
+        background: #0f172a;
+        border-radius: 8px;
+        padding: 8px 10px;
+        height: 58px;
+        overflow: hidden;
+        box-shadow: inset 0 3px 8px rgba(0,0,0,0.7);
+        cursor: pointer;
+        border: 1px solid #000;
+        transition: box-shadow 0.3s;
+    }
+
+    .card-slot:hover { box-shadow: inset 0 3px 8px rgba(0,0,0,0.7), 0 0 15px rgba(56,189,248,0.3); }
+    .card-slot.active { box-shadow: inset 0 3px 8px rgba(0,0,0,0.7), 0 0 20px rgba(56,189,248,0.6); }
+
+    .slot-track {
+        position: absolute;
+        left: 15%; right: 15%;
+        top: 50%;
+        height: 4px;
+        background: #000;
+        border-radius: 2px;
+        transform: translateY(-50%);
+        box-shadow: inset 0 1px 2px rgba(255,255,255,0.1);
+    }
+
+    .card-anim {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) translateX(140px);
+        width: 110px;
+        height: 42px;
+        background: linear-gradient(135deg, #3b82f6, #1e40af);
+        border-radius: 6px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+        transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        align-items: center;
+        padding: 0 8px;
+        border: 1px solid #1e3a8a;
+    }
+
+    .card-anim.inserted { transform: translate(-50%, -50%) translateX(0); opacity: 0.3; }
+    .card-anim.ejecting { transform: translate(-50%, -50%) translateX(140px); }
+
+    .card-chip {
+        width: 16px; height: 12px;
+        background: linear-gradient(135deg, #fbbf24, #d97706);
+        border-radius: 2px;
+        margin-right: 6px;
+    }
+
+    .card-num {
+        color: rgba(255,255,255,0.85);
+        font-size: 0.65rem;
+        font-family: 'Courier New', monospace;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+
+    .slot-led {
+        position: absolute;
+        right: 8px;
+        top: 8px;
+        width: 8px; height: 8px;
+        background: #4ade80;
+        border-radius: 50%;
+        box-shadow: 0 0 8px #4ade80;
+        animation: pulseLed 1.8s infinite;
+    }
+
+    .slot-led.off { background: #64748b; box-shadow: none; animation: none; }
+
+    @keyframes pulseLed {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.35; }
+    }
+
+    /* Keypad */
+    .keypad {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+
+    .keypad button {
+        background: linear-gradient(180deg, #e2e8f0 0%, #94a3b8 100%);
+        border: 1px solid #475569;
+        border-radius: 8px;
+        height: 44px;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #0f172a;
+        font-family: 'Courier New', monospace;
+        cursor: pointer;
+        box-shadow: 0 3px 0 #1e293b, inset 0 1px 0 rgba(255,255,255,0.7);
+        transition: all 0.08s;
+        user-select: none;
+    }
+
+    .keypad button:hover {
+        background: linear-gradient(180deg, #f1f5f9 0%, #cbd5e1 100%);
+    }
+
+    .keypad button:active, .keypad button.pressed {
+        transform: translateY(3px);
+        box-shadow: 0 0 0 #1e293b, inset 0 2px 3px rgba(0,0,0,0.3);
+        background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%);
+    }
+
+    .keypad button.fn {
+        background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
+        color: #1e293b;
+        border-color: #92400e;
+        font-size: 1.1rem;
+    }
+
+    .keypad button.fn:hover {
+        background: linear-gradient(180deg, #fcd34d 0%, #f59e0b 100%);
+    }
+
+    .keypad button.fn.ok {
+        background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%);
+        border-color: #14532d;
+        color: #052e16;
+    }
+
+    .keypad button.fn.ok:hover {
+        background: linear-gradient(180deg, #86efac 0%, #22c55e 100%);
+    }
+
+    /* Bottom dispensers */
+    .atm-bottom {
+        display: grid;
+        grid-template-columns: 1.6fr 1fr;
+        gap: 0.8rem;
+        margin-bottom: 0.9rem;
+    }
+
+    .dispenser, .printer {
+        background: linear-gradient(180deg, #475569, #334155);
+        border-radius: 14px;
+        padding: 0.7rem 0.9rem 0.9rem;
+        box-shadow: inset 0 2px 4px rgba(255,255,255,0.06), inset 0 -3px 8px rgba(0,0,0,0.4);
+        border: 1px solid #0f172a;
+    }
+
+    .dispenser-slot, .printer-slot {
+        position: relative;
+        background: #0f172a;
+        border-radius: 6px;
+        height: 30px;
+        box-shadow: inset 0 4px 8px rgba(0,0,0,0.8);
+        overflow: visible;
+        border: 1px solid #000;
+    }
+
+    .cash-anim {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translate(-50%, 0);
+        width: 90px;
+        height: 46px;
+        background: linear-gradient(135deg, #86efac, #4ade80);
+        border-radius: 4px;
+        border: 1px solid #16a34a;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        opacity: 0;
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #064e3b;
+        font-weight: 800;
+        font-size: 0.75rem;
+        font-family: 'Courier New', monospace;
+    }
+
+    .cash-anim.show {
+        animation: cashOut 1.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes cashOut {
+        0% { transform: translate(-50%, 20px) scale(0.6); opacity: 0; }
+        25% { transform: translate(-50%, -25px) scale(1); opacity: 1; }
+        100% { transform: translate(-50%, -25px) scale(1); opacity: 1; }
+    }
+
+    .receipt-anim {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translate(-50%, 0);
+        width: 130px;
+        background: #fefce8;
+        border-radius: 2px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        color: #1c1917;
+        font-size: 0.55rem;
+        font-family: 'Courier New', monospace;
+        padding: 6px 8px;
+        line-height: 1.3;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .receipt-anim.show {
+        animation: receiptOut 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    @keyframes receiptOut {
+        0% { transform: translate(-50%, 30px); opacity: 0; }
+        100% { transform: translate(-50%, -80px); opacity: 1; }
+    }
+
+    /* ATM footer */
+    .atm-footer {
+        text-align: center;
+        color: #94a3b8;
+        font-size: 0.72rem;
+        letter-spacing: 0.5px;
+        padding: 0.5rem 0 0.2rem;
+        border-top: 1px solid rgba(255,255,255,0.06);
+        font-style: italic;
+    }
+
+    /* Hint panel */
+    .hint-panel {
+        max-width: 720px;
+        width: 100%;
+        margin-top: 1.2rem;
+        background: #ffffff;
+        border-radius: 18px;
+        padding: 1rem 1.3rem;
+        box-shadow: 0 8px 25px rgba(15, 23, 42, 0.08);
+        border-left: 6px solid #f59e0b;
+    }
+
+    .hint-title {
+        font-size: 0.72rem;
+        color: #92400e;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 0.4rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    #hintText {
+        color: #334155;
+        font-size: 0.92rem;
+        line-height: 1.5;
+    }
+
+    #hintText b { color: #b45309; }
+    #hintText em { color: #0369a1; font-style: normal; font-weight: 600; }
+
+    /* Toast */
+    .toast {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%) translateY(60px);
+        background: #1e293b;
+        color: #fff;
+        padding: 0.7rem 1.4rem;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        opacity: 0;
+        transition: all 0.3s;
+        pointer-events: none;
+        z-index: 1000;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+        .atm-body { grid-template-columns: 1fr; }
+        .atm-bottom { grid-template-columns: 1fr; }
+        .screen { min-height: 300px; padding: 1.1rem 1rem; }
+        .scr-center { min-height: 260px; }
+        .menu-grid button { font-size: 0.75rem; min-height: 50px; }
+        .keypad button { height: 40px; font-size: 1rem; }
+        .pin-dot { width: 36px; height: 44px; font-size: 1.3rem; }
+        .page-header h1 { font-size: 1.4rem; }
+    }
+
+    @media (max-width: 380px) {
+        .atm { padding: 0.8rem; border-radius: 20px; }
+        .menu-grid { grid-template-columns: 1fr; }
+        .screen { min-height: 260px; padding: 0.9rem 0.7rem; }
+        .scr-title { font-size: 1rem; }
+        .scr-big { font-size: 1.7rem; }
+    }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+    <h1>🏧 Cajero automático</h1>
+    <p>Simulador interactivo en español</p>
+</div>
+
+<!-- ============ ATM ============ -->
+<div class="atm">
+    <div class="atm-top">
+        <div class="bank-brand">
+            <div class="bank-icon">🏦</div>
+            <div>
+                <div class="bank-name">Banco Español</div>
+                <div class="bank-tagline">Cajero automático · 24 h</div>
+            </div>
+        </div>
+        <div class="atm-clock" id="atmClock">--:--</div>
+    </div>
+
+    <div class="atm-body">
+        <!-- SCREEN -->
+        <div class="screen-bezel">
+            <div class="screen" id="screen"></div>
+        </div>
+
+        <!-- SIDE PANEL -->
+        <div class="atm-panel">
+            <!-- Card slot -->
+            <div>
+                <div class="slot-label">💳 Tarjeta</div>
+                <div class="card-slot" id="cardSlot" title="Pulse para introducir la tarjeta">
+                    <div class="slot-track"></div>
+                    <div class="card-anim" id="cardAnim">
+                        <div class="card-chip"></div>
+                        <div class="card-num">•••• 1234</div>
+                    </div>
+                    <div class="slot-led" id="cardLed"></div>
+                </div>
+            </div>
+
+            <!-- Keypad -->
+            <div>
+                <div class="keypad-label">⌨️ Teclado</div>
+                <div class="keypad" id="keypad">
+                    <button data-key="1">1</button>
+                    <button data-key="2">2</button>
+                    <button data-key="3">3</button>
+                    <button data-key="4">4</button>
+                    <button data-key="5">5</button>
+                    <button data-key="6">6</button>
+                    <button data-key="7">7</button>
+                    <button data-key="8">8</button>
+                    <button data-key="9">9</button>
+                    <button data-key="borrar" class="fn">←</button>
+                    <button data-key="0">0</button>
+                    <button data-key="aceptar" class="fn ok">✓</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="atm-bottom">
+        <div class="dispenser">
+            <div class="slot-label">💵 Dinero</div>
+            <div class="dispenser-slot" id="cashSlot">
+                <div class="cash-anim" id="cashAnim">€ € €</div>
+            </div>
+        </div>
+        <div class="printer">
+            <div class="slot-label">🧾 Recibo</div>
+            <div class="printer-slot" id="receiptSlot">
+                <div class="receipt-anim" id="receiptAnim"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="atm-footer" id="atmFooter">Bienvenido · Inserte su tarjeta para comenzar</div>
+</div>
+
+<!-- Hint panel -->
+<div class="hint-panel">
+    <div class="hint-title">💡 Traducción al ruso / Подсказка</div>
+    <div id="hintText"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   ESTADO
+============================================================ */
+const PIN_CORRECTO = '1234';
+const SALDO_INICIAL = 1250.50;
+
+const state = {
+    step: 'welcome',
+    cardIn: false,
+    input: '',
+    attempts: 0,
+    balance: SALDO_INICIAL,
+    amount: 0,
+    receipt: false,
+    history: [
+        { date: Date.now() - 86400000, desc: 'Ingreso nómina', amount: 1250.50, type: 'in' }
+    ],
+    transferAccount: '',
+    currency: null,
+    phone: '',
+    soundOn: true
+};
+
+const CURRENCIES = {
+    USD: { name: 'Dólar americano', rate: 1.08, symbol: '$' },
+    GBP: { name: 'Libra esterlina', rate: 0.86, symbol: '£' },
+    RUB: { name: 'Rublo ruso', rate: 98.50, symbol: '₽' }
+};
+
+/* ============================================================
+   UTILIDADES
+============================================================ */
+function formatMoney(n) {
+    return n.toFixed(2).replace('.', ',') + ' €';
+}
+
+function formatDate(ts) {
+    const d = new Date(ts);
+    return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })
+        + ' ' + d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+}
+
+let audioCtx = null;
+function beep(freq = 880, duration = 70, volume = 0.05) {
+    if (!state.soundOn) return;
+    try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration / 1000);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration / 1000);
+    } catch (e) {}
+}
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timeout);
+    t._timeout = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ============================================================
+   ШАБЛОНЫ ЭКРАНОВ
+============================================================ */
+const screens = {
+
+    welcome: () => `
+        <div class="scr-center">
+            <div class="scr-logo">🏦</div>
+            <div class="scr-title">Bienvenido</div>
+            <div class="scr-text">Por favor, introduzca su tarjeta</div>
+            <button class="scr-btn primary" data-action="insertar-tarjeta">
+                💳 Introducir tarjeta
+            </button>
+            <div class="scr-text small mt">Banco Español · 24 horas</div>
+        </div>
+    `,
+
+    leyendo: () => `
+        <div class="scr-center">
+            <div class="scr-title">Leyendo tarjeta…</div>
+            <div class="spinner"></div>
+            <div class="scr-text">Espere un momento, por favor</div>
+        </div>
+    `,
+
+    pin: () => {
+        const dots = [0,1,2,3].map(i =>
+            `<span class="pin-dot ${i < state.input.length ? 'filled' : ''}">${i < state.input.length ? '●' : '○'}</span>`
+        ).join('');
+        return `
+            <div class="scr-center">
+                <div class="scr-title">Teclee su número PIN</div>
+                <div class="pin-display">${dots}</div>
+                <div class="scr-text">Introduzca su PIN y pulse <b>✓</b></div>
+                <div class="scr-text small">Intentos restantes: ${3 - state.attempts}</div>
+            </div>
+        `;
+    },
+
+    'pin-error': () => `
+        <div class="scr-center error">
+            <div class="scr-icon">⚠️</div>
+            <div class="scr-title">PIN incorrecto</div>
+            <div class="scr-text">Intente de nuevo, por favor</div>
+        </div>
+    `,
+
+    bloqueada: () => `
+        <div class="scr-center error">
+            <div class="scr-icon">🔒</div>
+            <div class="scr-title">Tarjeta bloqueada</div>
+            <div class="scr-text">Retire su tarjeta, por favor</div>
+            <button class="scr-btn" data-action="retirar-tarjeta">Retirar tarjeta</button>
+        </div>
+    `,
+
+    menu: () => `
+        <div class="scr-menu">
+            <div class="scr-title">Seleccione la operación deseada</div>
+            <div class="menu-grid">
+                <button data-action="consultar">💰 Consultar saldo</button>
+                <button data-action="sacar">💸 Sacar dinero</button>
+                <button data-action="ingresar">📥 Ingresar dinero</button>
+                <button data-action="transferir">🔄 Transferencia</button>
+                <button data-action="cambio">💱 Cambiar moneda</button>
+                <button data-action="recarga">📱 Recarga móvil</button>
+                <button data-action="movimientos">📜 Movimientos</button>
+                <button data-action="salir" class="danger">🚪 Salir</button>
+            </div>
+        </div>
+    `,
+
+    consultar: () => `
+        <div class="scr-center">
+            <div class="scr-title">Su saldo actual es</div>
+            <div class="scr-big">${formatMoney(state.balance)}</div>
+            <div class="scr-divider"></div>
+            <div class="scr-text small">Cuenta corriente · **** 1234</div>
+            <div class="scr-actions">
+                <button data-action="menu">← Volver al menú</button>
+                <button data-action="salir" class="secondary">Salir</button>
+            </div>
+        </div>
+    `,
+
+    sacar: () => `
+        <div class="scr-menu">
+            <div class="scr-title">Seleccione el importe a sacar</div>
+            <div class="amount-grid">
+                <button data-amount="20">20 €</button>
+                <button data-amount="50">50 €</button>
+                <button data-amount="100">100 €</button>
+                <button data-amount="200">200 €</button>
+                <button data-action="sacar-custom" class="wide">Otro importe</button>
+                <button data-action="menu" class="secondary wide">← Volver</button>
+            </div>
+            <div class="scr-text small" style="text-align:center; margin-top:0.8rem;">
+                Disponible: ${formatMoney(state.balance)}
+            </div>
+        </div>
+    `,
+
+    'sacar-custom': () => `
+        <div class="scr-center">
+            <div class="scr-title">Introduzca el importe</div>
+            <div class="scr-input">${state.input || '0'} €</div>
+            <div class="scr-text small">Use el teclado y pulse ✓</div>
+            <div class="scr-text small">Múltiplos de 10 € · Máx. 600 €</div>
+            <div class="scr-actions">
+                <button data-action="sacar" class="secondary">← Volver</button>
+            </div>
+        </div>
+    `,
+
+    confirmar: () => `
+        <div class="scr-center">
+            <div class="scr-title">Confirme la operación</div>
+            <div class="scr-big">${formatMoney(state.amount)}</div>
+            <div class="scr-text mt">¿Desea recibo?</div>
+            <div class="scr-actions col">
+                <button data-action="confirmar-si">Sí, con recibo</button>
+                <button data-action="confirmar-no" class="secondary">No, sin recibo</button>
+                <button data-action="cancelar" class="danger-outline">Cancelar</button>
+            </div>
+        </div>
+    `,
+
+    procesando: () => `
+        <div class="scr-center">
+            <div class="scr-title">Espere un momento…</div>
+            <div class="spinner"></div>
+            <div class="scr-text">Procesando su operación</div>
+        </div>
+    `,
+
+    'retirar-dinero': () => `
+        <div class="scr-center success">
+            <div class="scr-icon">💵</div>
+            <div class="scr-title">Retire su dinero</div>
+            <div class="scr-big">${formatMoney(state.amount)}</div>
+            <div class="scr-text">Gracias por su operación</div>
+            <button class="scr-btn primary" data-action="menu">Continuar →</button>
+        </div>
+    `,
+
+    ingresar: () => `
+        <div class="scr-center">
+            <div class="scr-icon big">💵</div>
+            <div class="scr-title">Ingresar dinero</div>
+            <div class="scr-text">Introduzca los billetes en la ranura</div>
+            <div class="scr-actions col">
+                <button data-action="ingresar-custom">Introducir importe</button>
+                <button data-action="menu" class="secondary">Cancelar</button>
+            </div>
+        </div>
+    `,
+
+    'ingresar-custom': () => `
+        <div class="scr-center">
+            <div class="scr-title">Importe a ingresar</div>
+            <div class="scr-input">${state.input || '0'} €</div>
+            <div class="scr-text small">Use el teclado y pulse ✓</div>
+            <div class="scr-actions">
+                <button data-action="ingresar" class="secondary">← Volver</button>
+            </div>
+        </div>
+    `,
+
+    'ingresar-ok': () => `
+        <div class="scr-center success">
+            <div class="scr-icon">✅</div>
+            <div class="scr-title">Ingreso realizado</div>
+            <div class="scr-big">+${formatMoney(state.amount)}</div>
+            <div class="scr-text">Nuevo saldo: <b>${formatMoney(state.balance)}</b></div>
+            <button class="scr-btn primary" data-action="menu">Continuar →</button>
+        </div>
+    `,
+
+    transferir: () => `
+        <div class="scr-center">
+            <div class="scr-title">Transferencia</div>
+            <div class="scr-text">Introduzca el número de cuenta destino</div>
+            <div class="scr-input" style="font-size:1.3rem; letter-spacing:3px;">
+                ${state.input || '— — — — — — — — — —'}
+            </div>
+            <div class="scr-text small">20 dígitos · Use el teclado y pulse ✓</div>
+            <div class="scr-actions">
+                <button data-action="menu" class="secondary">← Volver</button>
+            </div>
+        </div>
+    `,
+
+    'transferir-importe': () => `
+        <div class="scr-center">
+            <div class="scr-title">Importe a transferir</div>
+            <div class="scr-input">${state.input || '0'} €</div>
+            <div class="scr-text small">Destino: ${state.transferAccount}</div>
+            <div class="scr-text small">Use el teclado y pulse ✓</div>
+            <div class="scr-actions">
+                <button data-action="transferir" class="secondary">← Volver</button>
+            </div>
+        </div>
+    `,
+
+    'transferir-confirmar': () => `
+        <div class="scr-center">
+            <div class="scr-title">Confirmar transferencia</div>
+            <div class="scr-big">${formatMoney(state.amount)}</div>
+            <div class="scr-text small">A la cuenta: ${state.transferAccount}</div>
+            <div class="scr-text small">Comisión: 1,00 €</div>
+            <div class="scr-actions col">
+                <button data-action="transferir-ok">Confirmar</button>
+                <button data-action="cancelar" class="danger-outline">Cancelar</button>
+            </div>
+        </div>
+    `,
+
+    'transferir-ok': () => `
+        <div class="scr-center success">
+            <div class="scr-icon">✅</div>
+            <div class="scr-title">Transferencia realizada</div>
+            <div class="scr-text">Importe: <b>${formatMoney(state.amount)}</b></div>
+            <div class="scr-text">Comisión: 1,00 €</div>
+            <div class="scr-text">Nuevo saldo: <b>${formatMoney(state.balance)}</b></div>
+            <button class="scr-btn primary" data-action="menu">Continuar →</button>
+        </div>
+    `,
+
+    cambio: () => `
+        <div class="scr-menu">
+            <div class="scr-title">Cambiar moneda</div>
+            <div class="scr-text small" style="text-align:center; margin-bottom:0.6rem;">
+                Seleccione la divisa
+            </div>
+            <div class="menu-grid">
+                <button data-currency="USD">🇺🇸 USD<br><span style="font-size:0.65rem;opacity:0.8">${CURRENCIES.USD.rate} $ / €</span></button>
+                <button data-currency="GBP">🇬🇧 GBP<br><span style="font-size:0.65rem;opacity:0.8">${CURRENCIES.GBP.rate} £ / €</span></button>
+                <button data-currency="RUB">🇷🇺 RUB<br><span style="font-size:0.65rem;opacity:0.8">${CURRENCIES.RUB.rate} ₽ / €</span></button>
+                <button data-action="menu" class="secondary">← Volver</button>
+            </div>
+        </div>
+    `,
+
+    'cambio-importe': () => `
+        <div class="scr-center">
+            <div class="scr-title">Importe a cambiar</div>
+            <div class="scr-input">${state.input || '0'} €</div>
+            <div class="scr-text small">Divisa: ${CURRENCIES[state.currency].name}</div>
+            <div class="scr-text small">Tasa: ${CURRENCIES[state.currency].rate} por €</div>
+            <div class="scr-text small">Use el teclado y pulse ✓</div>
+            <div class="scr-actions">
+                <button data-action="cambio" class="secondary">← Volver</button>
+            </div>
+        </div>
+    `,
+
+    'cambio-ok': () => {
+        const c = CURRENCIES[state.currency];
+        const result = (state.amount * c.rate).toFixed(2);
+        return `
+            <div class="scr-center success">
+                <div class="scr-icon">💱</div>
+                <div class="scr-title">Cambio realizado</div>
+                <div class="scr-text">${formatMoney(state.amount)} →</div>
+                <div class="scr-big">${result} ${c.symbol}</div>
+                <div class="scr-text small">Retire su dinero</div>
+                <button class="scr-btn primary" data-action="menu">Continuar →</button>
+            </div>
+        `;
+    },
+
+    recarga: () => `
+        <div class="scr-center">
+            <div class="scr-title">Recarga de móvil</div>
+            <div class="scr-text">Introduzca el número de teléfono</div>
+            <div class="scr-input" style="font-size:1.3rem; letter-spacing:2px;">
+                ${state.input || '— — — — — — — — —'}
+            </div>
+            <div class="scr-text small">9 dígitos · Use el teclado y pulse ✓</div>
+            <div class="scr-actions">
+                <button data-action="menu" class="secondary">← Volver</button>
+            </div>
+        </div>
+    `,
+
+    'recarga-importe': () => `
+        <div class="scr-center">
+            <div class="scr-title">Importe de la recarga</div>
+            <div class="scr-input">${state.input || '0'} €</div>
+            <div class="scr-text small">Teléfono: ${state.phone}</div>
+            <div class="scr-text small">Use el teclado y pulse ✓</div>
+            <div class="scr-actions">
+                <button data-action="recarga" class="secondary">← Volver</button>
+            </div>
+        </div>
+    `,
+
+    'recarga-ok': () => `
+        <div class="scr-center success">
+            <div class="scr-icon">📱</div>
+            <div class="scr-title">Recarga realizada</div>
+            <div class="scr-text">Teléfono: <b>${state.phone}</b></div>
+            <div class="scr-text">Importe: <b>${formatMoney(state.amount)}</b></div>
+            <div class="scr-text">Nuevo saldo: ${formatMoney(state.balance)}</div>
+            <button class="scr-btn primary" data-action="menu">Continuar →</button>
+        </div>
+    `,
+
+    movimientos: () => {
+        const items = state.history.slice(0, 5);
+        const list = items.length === 0
+            ? '<div class="scr-text small">No hay movimientos recientes</div>'
+            : items.map(h => `
+                <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid rgba(56,189,248,0.2);font-size:0.78rem;">
+                    <div style="text-align:left;">
+                        <div>${h.desc}</div>
+                        <div style="font-size:0.65rem;color:#7dd3fc;opacity:0.7;">${formatDate(h.date)}</div>
+                    </div>
+                    <div style="font-weight:700;color:${h.type === 'in' ? '#4ade80' : '#fbbf24'};">
+                        ${h.type === 'in' ? '+' : '-'}${formatMoney(h.amount)}
+                    </div>
+                </div>
+            `).join('');
+        return `
+            <div class="scr-menu">
+                <div class="scr-title">Últimos movimientos</div>
+                <div style="margin-top:0.8rem;">${list}</div>
+                <div class="scr-actions" style="margin-top:1rem;">
+                    <button data-action="menu">← Volver al menú</button>
+                </div>
+            </div>
+        `;
+    },
+
+    salir: () => `
+        <div class="scr-center">
+            <div class="scr-icon">👋</div>
+            <div class="scr-title">Gracias por su visita</div>
+            <div class="scr-text">Retire su tarjeta, por favor</div>
+            <button class="scr-btn primary" data-action="retirar-tarjeta">
+                💳 Retirar tarjeta
+            </button>
+        </div>
+    `
+};
+
+/* ============================================================
+   ПОДСКАЗКИ (RUSO)
+============================================================ */
+const hints = {
+    welcome: '<b>Bienvenido</b> — Добро пожаловать. <em>Introduzca su tarjeta</em> — вставьте карту.',
+    leyendo: '<b>Leyendo tarjeta</b> — чтение карты. <em>Espere un momento</em> — подождите немного.',
+    pin: '<b>Teclee su número PIN</b> — введите PIN-код. <em>Introduzca</em> — введите. Нажмите ✓ для подтверждения.',
+    'pin-error': '<b>PIN incorrecto</b> — неверный PIN. <em>Intente de nuevo</em> — попробуйте снова.',
+    bloqueada: '<b>Tarjeta bloqueada</b> — карта заблокирована. <em>Retire su tarjeta</em> — заберите карту.',
+    menu: '<b>Seleccione la operación deseada</b> — выберите нужную операцию.',
+    consultar: '<b>Su saldo actual es</b> — ваш текущий баланс. <em>Volver al menú</em> — вернуться в меню.',
+    sacar: '<b>Seleccione el importe</b> — выберите сумму. <em>Otro importe</em> — другая сумма.',
+    'sacar-custom': '<b>Introduzca el importe</b> — введите сумму. Используйте клавиатуру и нажмите ✓.',
+    confirmar: '<b>Confirme la operación</b> — подтвердите операцию. <em>¿Desea recibo?</em> — нужен ли чек?',
+    procesando: '<b>Espere un momento</b> — подождите немного. <em>Procesando</em> — обрабатывается.',
+    'retirar-dinero': '<b>Retire su dinero</b> — заберите деньги. <em>Retirar</em> — извлекать/снимать.',
+    ingresar: '<b>Ingresar dinero</b> — внести деньги. <em>Introduzca los billetes</em> — вставьте купюры.',
+    'ingresar-custom': '<b>Importe a ingresar</b> — сумма для внесения.',
+    'ingresar-ok': '<b>Ingreso realizado</b> — внесение выполнено. <em>Nuevo saldo</em> — новый баланс.',
+    transferir: '<b>Transferencia</b> — перевод. <em>Número de cuenta destino</em> — номер счёта получателя.',
+    'transferir-importe': '<b>Importe a transferir</b> — сумма перевода.',
+    'transferir-confirmar': '<b>Confirmar transferencia</b> — подтвердите перевод. <em>Comisión</em> — комиссия.',
+    'transferir-ok': '<b>Transferencia realizada</b> — перевод выполнен.',
+    cambio: '<b>Cambiar moneda</b> — обменять валюту. <em>Seleccione la divisa</em> — выберите валюту.',
+    'cambio-importe': '<b>Importe a cambiar</b> — сумма для обмена. <em>Tasa</em> — курс.',
+    'cambio-ok': '<b>Cambio realizado</b> — обмен выполнен. <em>Retire su dinero</em> — заберите деньги.',
+    recarga: '<b>Recarga de móvil</b> — пополнение мобильного. <em>Número de teléfono</em> — номер телефона.',
+    'recarga-importe': '<b>Importe de la recarga</b> — сумма пополнения.',
+    'recarga-ok': '<b>Recarga realizada</b> — пополнение выполнено.',
+    movimientos: '<b>Últimos movimientos</b> — последние операции по счёту.',
+    salir: '<b>Gracias por su visita</b> — спасибо за визит. <em>Retire su tarjeta</em> — заберите карту.'
+};
+
+/* ============================================================
+   РЕНДЕР
+============================================================ */
+function render() {
+    const screen = document.getElementById('screen');
+    const template = screens[state.step] || screens.welcome;
+    screen.innerHTML = template();
+    document.getElementById('hintText').innerHTML = hints[state.step] || '';
+
+    const footers = {
+        welcome: 'Inserte su tarjeta para comenzar',
+        leyendo: 'Leyendo tarjeta…',
+        pin: 'Teclee su PIN y pulse ✓',
+        'pin-error': 'PIN incorrecto',
+        bloqueada: 'Retire su tarjeta, por favor',
+        menu: 'Seleccione una operación',
+        consultar: 'Consulta de saldo',
+        sacar: 'Seleccione el importe a sacar',
+        'sacar-custom': 'Introduzca el importe',
+        confirmar: 'Confirme la operación',
+        procesando: 'Procesando…',
+        'retirar-dinero': 'Retire su dinero',
+        ingresar: 'Ingreso de dinero',
+        'ingresar-custom': 'Introduzca el importe',
+        'ingresar-ok': 'Ingreso completado',
+        transferir: 'Introduzca la cuenta destino',
+        'transferir-importe': 'Introduzca el importe',
+        'transferir-confirmar': 'Confirme la transferencia',
+        'transferir-ok': 'Transferencia completada',
+        cambio: 'Cambio de moneda',
+        'cambio-importe': 'Introduzca el importe',
+        'cambio-ok': 'Cambio completado',
+        recarga: 'Recarga de móvil',
+        'recarga-importe': 'Introduzca el importe',
+        'recarga-ok': 'Recarga completada',
+        movimientos: 'Últimos movimientos',
+        salir: 'Retire su tarjeta'
+    };
+    document.getElementById('atmFooter').textContent = footers[state.step] || '';
+
+    const cardSlot = document.getElementById('cardSlot');
+    const cardLed = document.getElementById('cardLed');
+    if (state.step === 'welcome' || state.step === 'salir' || state.step === 'bloqueada') {
+        cardSlot.classList.add('active');
+        cardLed.classList.remove('off');
+    } else {
+        cardSlot.classList.remove('active');
+        cardLed.classList.add('off');
+    }
+}
+
+/* ============================================================
+   НАВИГАЦИЯ ПО ЭКРАНАМ
+============================================================ */
+function setStep(step) {
+    state.step = step;
+    render();
+
+    if (step === 'leyendo') {
+        setTimeout(() => {
+            if (state.step === 'leyendo') setStep('pin');
+        }, 1600);
+    }
+
+    if (step === 'pin-error') {
+        setTimeout(() => {
+            if (state.step === 'pin-error') {
+                state.input = '';
+                setStep('pin');
+            }
+        }, 1800);
+    }
+
+    if (step === 'procesando') {
+        setTimeout(() => {
+            if (state.step === 'procesando') {
+                completePendingOperation();
+            }
+        }, 1800);
+    }
+
+    if (step === 'retirar-dinero') {
+        setTimeout(() => {
+            const cash = document.getElementById('cashAnim');
+            if (cash) {
+                cash.classList.add('show');
+                beep(660, 200, 0.06);
+            }
+        }, 300);
+        setTimeout(() => {
+            const cash = document.getElementById('cashAnim');
+            if (cash) cash.classList.remove('show');
+        }, 3500);
+    }
+
+    if (step === 'ingresar-ok' || step === 'transferir-ok' || step === 'cambio-ok' || step === 'recarga-ok') {
+        if (state.receipt) printReceipt();
+    }
+}
+
+/* ============================================================
+   ЛОГИКА КЛАВИАТУРЫ
+============================================================ */
+function pressKey(key) {
+    const btn = document.querySelector(`.keypad button[data-key="${key}"]`);
+    if (btn) {
+        btn.classList.add('pressed');
+        setTimeout(() => btn.classList.remove('pressed'), 120);
+    }
+
+    beep(key === 'aceptar' ? 1100 : key === 'borrar' ? 440 : 880, 60, 0.04);
+
+    if (key === 'borrar') {
+        state.input = state.input.slice(0, -1);
+        render();
+        return;
+    }
+
+    if (key === 'aceptar') {
+        handleAccept();
+        return;
+    }
+
+    const maxLen = getInputMaxLength();
+    if (state.input.length < maxLen) {
+        state.input += key;
+        render();
+    }
+}
+
+function getInputMaxLength() {
+    switch (state.step) {
+        case 'pin': return 4;
+        case 'sacar-custom': return 4;
+        case 'ingresar-custom': return 6;
+        case 'transferir': return 20;
+        case 'transferir-importe': return 6;
+        case 'cambio-importe': return 6;
+        case 'recarga': return 9;
+        case 'recarga-importe': return 3;
+        default: return 8;
+    }
+}
+
+function handleAccept() {
+    switch (state.step) {
+
+        case 'pin': {
+            if (state.input.length !== 4) {
+                showToast('El PIN debe tener 4 dígitos');
+                return;
+            }
+            if (state.input === PIN_CORRECTO) {
+                state.attempts = 0;
+                state.input = '';
+                beep(1200, 150, 0.06);
+                setStep('menu');
+            } else {
+                state.attempts++;
+                state.input = '';
+                if (state.attempts >= 3) {
+                    setStep('bloqueada');
+                } else {
+                    setStep('pin-error');
+                }
+            }
+            break;
+        }
+
+        case 'sacar-custom': {
+            const n = parseInt(state.input, 10);
+            if (!n || n <= 0) { showToast('Importe inválido'); return; }
+            if (n % 10 !== 0) { showToast('Debe ser múltiplo de 10 €'); return; }
+            if (n > 600) { showToast('Máximo 600 € por operación'); return; }
+            if (n > state.balance) { showToast('Saldo insuficiente'); return; }
+            state.amount = n;
+            state.input = '';
+            setStep('confirmar');
+            break;
+        }
+
+        case 'ingresar-custom': {
+            const n = parseInt(state.input, 10);
+            if (!n || n <= 0) { showToast('Importe inválido'); return; }
+            state.amount = n;
+            state.input = '';
+            state.balance += n;
+            state.history.unshift({ date: Date.now(), desc: 'Ingreso en efectivo', amount: n, type: 'in' });
+            setStep('ingresar-ok');
+            break;
+        }
+
+        case 'transferir': {
+            if (state.input.length < 20) {
+                showToast('Introduzca los 20 dígitos de la cuenta');
+                return;
+            }
+            state.transferAccount = 'ES' + state.input.slice(-16).replace(/(.{4})/g, '$1 ').trim();
+            state.input = '';
+            setStep('transferir-importe');
+            break;
+        }
+
+        case 'transferir-importe': {
+            const n = parseInt(state.input, 10);
+            if (!n || n <= 0) { showToast('Importe inválido'); return; }
+            if (n + 1 > state.balance) { showToast('Saldo insuficiente (comisión 1 €)'); return; }
+            state.amount = n;
+            state.input = '';
+            setStep('transferir-confirmar');
+            break;
+        }
+
+        case 'cambio-importe': {
+            const n = parseInt(state.input, 10);
+            if (!n || n <= 0) { showToast('Importe inválido'); return; }
+            if (n > state.balance) { showToast('Saldo insuficiente'); return; }
+            state.amount = n;
+            state.balance -= n;
+            state.history.unshift({
+                date: Date.now(),
+                desc: 'Cambio a ' + state.currency,
+                amount: n, type: 'out'
+            });
+            state.input = '';
+            setStep('cambio-ok');
+            break;
+        }
+
+        case 'recarga': {
+            if (state.input.length < 9) {
+                showToast('Introduzca 9 dígitos');
+                return;
+            }
+            state.phone = state.input;
+            state.input = '';
+            setStep('recarga-importe');
+            break;
+        }
+
+        case 'recarga-importe': {
+            const n = parseInt(state.input, 10);
+            if (!n || n <= 0) { showToast('Importe inválido'); return; }
+            if (n > state.balance) { showToast('Saldo insuficiente'); return; }
+            state.amount = n;
+            state.balance -= n;
+            state.history.unshift({
+                date: Date.now(),
+                desc: 'Recarga ' + state.phone,
+                amount: n, type: 'out'
+            });
+            state.input = '';
+            setStep('recarga-ok');
+            break;
+        }
+
+        default:
+            break;
+    }
+}
+
+/* ============================================================
+   ДЕЙСТВИЯ С ЭКРАНА
+============================================================ */
+function handleAction(action) {
+    beep(990, 70, 0.04);
+
+    switch (action) {
+        case 'insertar-tarjeta': insertCard(); break;
+        case 'retirar-tarjeta': ejectCard(); break;
+        case 'menu': state.input = ''; setStep('menu'); break;
+        case 'consultar': setStep('consultar'); break;
+        case 'sacar': state.input = ''; setStep('sacar'); break;
+        case 'sacar-custom': state.input = ''; setStep('sacar-custom'); break;
+        case 'confirmar-si': state.receipt = true; setStep('procesando'); break;
+        case 'confirmar-no': state.receipt = false; setStep('procesando'); break;
+        case 'cancelar': state.input = ''; state.amount = 0; state.receipt = false; setStep('menu'); break;
+        case 'ingresar': state.input = ''; setStep('ingresar'); break;
+        case 'ingresar-custom': state.input = ''; setStep('ingresar-custom'); break;
+        case 'transferir': state.input = ''; setStep('transferir'); break;
+        case 'transferir-ok':
+            state.balance -= (state.amount + 1);
+            state.history.unshift({
+                date: Date.now(),
+                desc: 'Transferencia a ' + state.transferAccount,
+                amount: state.amount + 1, type: 'out'
+            });
+            state.receipt = true;
+            setStep('transferir-ok');
+            break;
+        case 'cambio': state.input = ''; setStep('cambio'); break;
+        case 'recarga': state.input = ''; setStep('recarga'); break;
+        case 'movimientos': setStep('movimientos'); break;
+        case 'salir': setStep('salir'); break;
+    }
+}
+
+function handleAmount(amount) {
+    const n = parseInt(amount, 10);
+    beep(990, 70, 0.04);
+    if (n > state.balance) { showToast('Saldo insuficiente'); return; }
+    state.amount = n;
+    setStep('confirmar');
+}
+
+function handleCurrency(cur) {
+    state.currency = cur;
+    state.input = '';
+    setStep('cambio-importe');
+}
+
+/* ============================================================
+   ЗАВЕРШЕНИЕ ОПЕРАЦИИ ПОСЛЕ "ПРОЦЕССИНГ"
+============================================================ */
+function completePendingOperation() {
+    if (state.amount > 0 && state.step === 'procesando') {
+        state.balance -= state.amount;
+        state.history.unshift({
+            date: Date.now(),
+            desc: 'Retirada de efectivo',
+            amount: state.amount,
+            type: 'out'
+        });
+        setStep('retirar-dinero');
+    } else {
+        setStep('menu');
+    }
+}
+
+/* ============================================================
+   АНИМАЦИИ КАРТЫ
+============================================================ */
+function insertCard() {
+    if (state.cardIn) return;
+    state.cardIn = true;
+    const card = document.getElementById('cardAnim');
+    card.classList.remove('ejecting');
+    card.classList.add('inserted');
+    beep(700, 200, 0.05);
+
+    setTimeout(() => {
+        setStep('leyendo');
+    }, 900);
+}
+
+function ejectCard() {
+    const card = document.getElementById('cardAnim');
+    card.classList.remove('inserted');
+    card.classList.add('ejecting');
+    beep(500, 250, 0.05);
+
+    setTimeout(() => {
+        state.cardIn = false;
+        state.input = '';
+        state.attempts = 0;
+        state.amount = 0;
+        state.receipt = false;
+        state.currency = null;
+        state.phone = '';
+        state.transferAccount = '';
+        card.classList.remove('ejecting');
+        setStep('welcome');
+        showToast('Gracias por su visita 👋');
+    }, 1500);
+}
+
+/* ============================================================
+   ПЕЧАТЬ ЧЕКА
+============================================================ */
+function printReceipt() {
+    const receipt = document.getElementById('receiptAnim');
+    const now = new Date();
+    receipt.innerHTML = `
+        <div style="text-align:center;font-weight:700;border-bottom:1px dashed #999;padding-bottom:3px;margin-bottom:3px;">
+            BANCO ESPAÑOL<br>
+            <span style="font-size:0.5rem;font-weight:400;">Cajero automático 24h</span>
+        </div>
+        <div>FECHA: ${now.toLocaleDateString('es-ES')} ${now.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'})}</div>
+        <div>TARJETA: **** 1234</div>
+        <div style="border-top:1px dashed #999;margin-top:3px;padding-top:3px;">
+            OPERACIÓN: ${getOperationName(state.step)}
+        </div>
+        <div>IMPORTE: ${formatMoney(state.amount)}</div>
+        <div>SALDO: ${formatMoney(state.balance)}</div>
+        <div style="text-align:center;border-top:1px dashed #999;margin-top:3px;padding-top:3px;font-size:0.5rem;">
+            ¡Gracias por su visita!
+        </div>
+    `;
+    receipt.classList.add('show');
+    beep(800, 150, 0.04);
+    setTimeout(() => {
+        receipt.classList.remove('show');
+    }, 4500);
+}
+
+function getOperationName(step) {
+    switch (step) {
+        case 'ingresar-ok': return 'INGRESO';
+        case 'transferir-ok': return 'TRANSFERENCIA';
+        case 'cambio-ok': return 'CAMBIO DIVISA';
+        case 'recarga-ok': return 'RECARGA MÓVIL';
+        default: return 'RETIRADA';
+    }
+}
+
+/* ============================================================
+   ОБРАБОТЧИКИ СОБЫТИЙ
+============================================================ */
+document.getElementById('screen').addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    if (btn.dataset.amount) handleAmount(btn.dataset.amount);
+    else if (btn.dataset.currency) handleCurrency(btn.dataset.currency);
+    else if (btn.dataset.action) handleAction(btn.dataset.action);
+});
+
+document.getElementById('keypad').addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    pressKey(btn.dataset.key);
+});
+
+document.getElementById('cardSlot').addEventListener('click', () => {
+    if (!state.cardIn && (state.step === 'welcome')) {
+        insertCard();
+    } else if (state.cardIn && (state.step === 'salir' || state.step === 'bloqueada')) {
+        ejectCard();
+    }
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key >= '0' && e.key <= '9') pressKey(e.key);
+    else if (e.key === 'Backspace') { e.preventDefault(); pressKey('borrar'); }
+    else if (e.key === 'Enter') { e.preventDefault(); pressKey('aceptar'); }
+});
+
+/* ============================================================
+   ЧАСЫ
+============================================================ */
+function updateClock() {
+    const now = new Date();
+    document.getElementById('atmClock').textContent =
+        now.getHours().toString().padStart(2, '0') + ':' +
+        now.getMinutes().toString().padStart(2, '0');
+}
+setInterval(updateClock, 10000);
+updateClock();
+
+/* ============================================================
+   СТАРТ
+============================================================ */
+render();
+</script>
+</body>
+</html>
